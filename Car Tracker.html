@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Car Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Car Tracker">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a5cff">
+<style>
+:root{--bg:#f2f2f2;--card:#fff;--tx:#000;--mut:#5a5a5a;--line:#d9d9d9;--acc:#0a5cff;--acc2:#fff;--ok:#0a5cff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--card:#111;--tx:#fff;--mut:#9a9a9a;--line:#2a2a2a;--acc:#3d8bff;--acc2:#fff;--ok:#3d8bff}}
+:root[data-theme="dark"]{--bg:#000;--card:#111;--tx:#fff;--mut:#9a9a9a;--line:#2a2a2a;--acc:#3d8bff;--acc2:#fff;--ok:#3d8bff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 90px}
+h1{font-size:22px;margin:4px 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.mut{color:var(--mut);font-size:13px}
+.big{font-size:30px;font-weight:700}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sum .full{grid-column:1/-1;border-top:1px solid var(--line);padding-top:12px}
+.in{color:var(--ok)}.todo{color:var(--acc)}
+select,input{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--tx);font-size:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
+button{border:0;border-radius:10px;padding:12px;font-size:16px;font-weight:600;background:var(--acc);color:var(--acc2);width:100%;cursor:pointer}
+.sec{background:var(--bg);color:var(--tx);border:1px solid var(--line)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.row{display:block;padding:12px 0;border-top:1px solid var(--line)}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.nm{font-weight:600;font-size:17px;overflow-wrap:anywhere}
+.sub{margin-top:2px}
+.pill{flex:1;width:auto;padding:8px 6px;font-size:14px;font-weight:600;background:var(--bg);color:var(--tx);border:1px solid var(--line)}
+.pill.go{background:var(--acc);color:var(--acc2);border-color:var(--acc)}
+.pill.del{color:#dc2626}
+.hd+.row{border-top:0}
+.hd{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:6px;margin-bottom:2px;border-bottom:2px solid var(--line)}
+.hd b{font-size:19px}
+.amt{font-weight:700;font-size:18px;white-space:nowrap}
+.acts{display:flex;gap:8px;margin-top:10px}
+.x{background:none;color:var(--mut);width:auto;padding:6px 8px;font-size:18px}
+.toast{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:616px;margin:0 auto;background:var(--tx);color:var(--bg);border-radius:12px;padding:12px 14px;display:none;justify-content:space-between;align-items:center;gap:10px;z-index:9}
+.toast button{width:auto;background:none;color:var(--acc);padding:0 4px}
+.err{border-color:#dc2626!important}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:10px"><select id="carSel" aria-label="Switch car"></select><button class="sec" id="newCar" style="width:auto">+ New car</button><button class="sec" id="delCar" style="width:auto" aria-label="Delete this car">🗑</button></div>
+<h1>🔧 <input id="car" aria-label="Car name" placeholder="My car (tap to name it)" style="width:calc(100% - 40px);font-size:20px;font-weight:700;border:0;background:transparent;padding:0"></h1>
+
+<div class="card sum">
+<div class="full" style="border-top:0;padding-top:0"><div id="priceAsk"><div class="mut">What did you buy the car for?</div><div style="margin-top:6px"><input id="price" aria-label="Car purchase price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Purchase price $"></div></div><div id="priceDone" style="display:none"><div class="hd" style="border:0;padding:0;margin:0"><span class="mut">Bought the car for</span><button class="x" id="priceEdit" style="font-size:13px;text-decoration:underline">Edit</button></div><div class="big" id="priceShow">$0</div></div></div>
+<div class="full"><div class="mut">Total put in (parts &amp; labor, no car price)</div><div class="big in" style="font-size:26px" id="tParts">$0</div></div>
+<div class="full"><div class="mut">Total put in so far (with car price)</div><div class="big in" id="tNow">$0</div></div>
+<div class="full"><div class="mut" id="tTodoLbl">Things I wanna / need to do</div><div class="big todo" style="font-size:26px" id="tTodo">$0</div></div>
+<div class="full"><div class="mut">Total with things I wanna / need to do (with car price)</div><div class="big" id="tAll">$0</div></div>
+</div>
+
+<div class="card">
+<div class="grid">
+<input class="full" id="name" aria-label="What is it" placeholder="What is it? (e.g. Alignment)">
+<input id="cost" aria-label="Cost" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Cost $ (optional)">
+<input id="labor" aria-label="Labor" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Labor $ (optional)">
+<div class="seg full"><button id="mTodo">To do</button><button id="mDone" class="sec">Already done</button></div>
+<button class="full" id="add">Add</button>
+<button class="full sec" id="cancel" style="display:none">Cancel edit</button>
+</div>
+</div>
+
+<div class="card"><div class="hd"><b>To do</b><span class="mut" id="todoSub"></span></div><div id="todoList"></div></div>
+<div class="card"><div class="hd"><b>Done</b><span class="mut" id="doneSub"></span></div><div id="doneList"></div>
+<div class="two"><button class="sec" id="csv">Export CSV</button><button class="sec" id="copy">Copy as text</button></div></div>
+</div>
+<div class="toast" id="toast"><span id="tmsg"></span><button id="undo">Undo</button></div>
+
+<script>
+var KEY="car-tracker-v2",OLD="car-tracker-v1",items=[],cars=[],cur=null,carName="",price=0,priceEditing=false,worth=0,store=null,editId=null,lastDel=null,tt=null,mode="todo";
+function $(i){return document.getElementById(i)}
+var SEED=[
+{id:1,name:"Alternator",cost:130,labor:80,done:true},
+{id:2,name:"Air filter",cost:12,labor:0,done:true},
+{id:3,name:"Gas since I got it",cost:700,labor:0,done:true},
+{id:4,name:"Oil since I got it",cost:250,labor:0,done:true}];
+function num(v){var n=parseFloat(v);return isNaN(n)||n<0?0:Math.round(n*100)/100}
+function tot(i){return i.cost+i.labor}
+function money(n){return "$"+n.toLocaleString(undefined,{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function readLocal(){
+  try{var r=localStorage.getItem(KEY)||localStorage.getItem(OLD);return r?JSON.parse(r):null}catch(e){return null}}
+function migrate(d){
+  if(!d)return{car:"",worth:0,items:SEED};
+  var its=(d.items||[]).filter(function(i){return i&&typeof i==="object"});
+  if(its.some(function(i){return i.done===undefined})){
+    var out=its.map(function(i){var c=num(i.cost),isL=i.cat==="Labor";
+      return{id:i.id,name:i.name||"Item",cost:isL?0:c,labor:isL?c:0,done:true}});
+    var alt=out.filter(function(i){return i.name==="Alternator"})[0],lab=out.filter(function(i){return i.name==="Alternator labor"})[0];
+    if(alt&&lab){alt.labor+=lab.labor;out=out.filter(function(i){return i!==lab})}
+    its=out;
+  }
+  return{car:d.car||"",worth:num(d.worth),items:its.map(function(i){return{id:i.id,name:i.name,cost:num(i.cost),labor:num(i.labor),done:!!i.done}})};
+}
+function sync(){var c=cars.filter(function(x){return x.id===cur})[0];if(c){c.name=carName;c.items=items;c.price=price}}
+var wBusy=false,wNext=null;
+function pushStore(d){
+  if(!store)return;
+  if(wBusy){wNext=d;return}
+  wBusy=true;
+  var done=function(){wBusy=false;if(wNext){var n=wNext;wNext=null;pushStore(n)}};
+  try{var r=store.set(d);if(r&&r.then)r.then(done,done);else done()}catch(e){done()}
+}
+function save(){
+  sync();var d={v:3,cars:cars,cur:cur};
+  try{localStorage.setItem(KEY,JSON.stringify(d))}catch(e){}
+  pushStore(JSON.parse(JSON.stringify(d)));
+}
+async function init(){
+  var d=null;
+  try{
+    var u=await claude.use("user"),db=await claude.use("db");
+    if(u&&db){var id=await u.id();var ref=db.collection("data/users/"+id).doc("tracker");
+      var snap=await ref.get();store=ref;if(snap.exists)d=JSON.parse(JSON.stringify(snap.data()))}
+  }catch(e){store=null}
+  if(!d)d=readLocal();
+  if(d&&d.cars&&d.cars.length){cars=d.cars;cur=d.cur}
+  else{d=migrate(d);cars=[{id:1,name:d.car,items:d.items,price:0}];cur=1}
+  loadCar();save();
+}
+function fillSel(){$("carSel").innerHTML=cars.map(function(c){return '<option value="'+c.id+'">'+esc(c.name||"Unnamed car")+'</option>'}).join("");$("carSel").value=cur}
+function loadCar(){
+  var c=cars.filter(function(x){return x.id===cur})[0]||cars[0];
+  cur=c.id;carName=c.name||"";items=c.items||[];price=num(c.price);priceEditing=false;lastDel=null;
+  $("car").value=carName;$("price").value=price||"";fillSel();clearForm();render();
+}
+$("carSel").onchange=function(){save();cur=Number(this.value);loadCar()};
+$("newCar").onclick=function(){save();var id=Date.now();cars.push({id:id,name:"",items:[],price:0});cur=id;loadCar();save();$("car").focus()};
+$("delCar").onclick=function(){
+  if(cars.length<2){toast("You need at least one car",false);return}
+  if(!confirm("Delete "+(carName||"this car")+" and everything in it?"))return;
+  cars=cars.filter(function(c){return c.id!==cur});cur=cars[0].id;loadCar();save();
+};
+function rowHtml(i){
+  var p=[];if(i.cost)p.push("Cost "+money(i.cost));if(i.labor)p.push("Labor "+money(i.labor));
+  return '<div class="row"><div class="top"><div class="nm">'+esc(i.name)+'</div><div class="amt">'+money(tot(i))+'</div></div>'+
+  '<div class="mut sub">'+(p.length?p.join(" · "):"No price yet")+'</div>'+
+  '<div class="acts">'+
+  '<button class="pill'+(i.done?'':' go')+'" data-act="tog" data-id="'+i.id+'">'+(i.done?"↩ Back to to do":"✓ Mark done")+'</button>'+
+  '<button class="pill" data-act="edit" data-id="'+i.id+'">Edit</button>'+
+  '<button class="pill del" data-act="del" data-id="'+i.id+'">Delete</button></div></div>';
+}
+function render(){
+  var a=items.filter(function(i){return i.done}),b=items.filter(function(i){return !i.done});
+  var sa=a.reduce(function(s,i){return s+tot(i)},0),sb=b.reduce(function(s,i){return s+tot(i)},0);
+  $("priceShow").textContent=money(price);var ask=true;$("priceAsk").style.display=ask?"block":"none";$("priceDone").style.display=ask?"none":"block";showPriceTotals();
+  $("doneSub").textContent=a.length?a.length+" · "+money(sa):"";
+  $("todoSub").textContent=b.length?b.length+" · "+money(sb):"";
+  $("doneList").innerHTML=a.length?a.map(rowHtml).join(""):'<div class="mut" style="padding-top:8px">Nothing done yet.</div>';
+  $("todoList").innerHTML=b.length?b.map(rowHtml).join(""):'<div class="mut" style="padding-top:8px">Nothing left to do. Add what you still need above.</div>';
+}
+function setMode(m){mode=m;$("mTodo").className=m==="todo"?"":"sec";$("mDone").className=m==="done"?"":"sec"}
+$("mTodo").onclick=function(){setMode("todo")};$("mDone").onclick=function(){setMode("done")};
+function clearForm(){editId=null;$("name").value="";$("cost").value="";$("labor").value="";setMode("todo");
+  $("add").textContent="Add";$("cancel").style.display="none"}
+function toast(msg,undo){
+  $("tmsg").textContent=msg;$("undo").style.display=undo?"inline":"none";$("toast").style.display="flex";
+  clearTimeout(tt);tt=setTimeout(function(){$("toast").style.display="none";lastDel=null},6000)}
+function showPriceTotals(){
+  var done=items.filter(function(i){return i.done}),todo=items.filter(function(i){return !i.done});
+  var sum=function(a){return a.reduce(function(s,i){return s+tot(i)},0)};
+  var gas=done.filter(function(i){return /^\s*gas/i.test(i.name)}),oil=done.filter(function(i){return /^\s*(oil|coolant|antifreeze)|fluid/i.test(i.name)});
+  var g=sum(gas),o=sum(oil),d=sum(done),t=sum(todo);
+  
+  $("tParts").textContent=money(d-g-o);
+  $("tNow").textContent=money(price+d-g-o);
+  $("tAll").textContent=money(price+d-g-o+t);
+  $("tTodo").textContent=money(t);$("tTodoLbl").textContent="Things I wanna / need to do ("+todo.length+(todo.length===1?" thing":" things")+" to save for)";
+}
+$("price").oninput=function(){price=num(this.value);save();showPriceTotals()};
+$("priceEdit").onclick=function(){$("price").focus()};
+$("car").oninput=function(){carName=this.value;save();var o=$("carSel").selectedOptions[0];if(o)o.textContent=carName||"Unnamed car"};
+$("add").onclick=function(){
+  var n=$("name").value.trim();
+  $("name").classList.toggle("err",!n);
+  if(!n)return;
+  var rec={name:n,cost:num($("cost").value),labor:num($("labor").value),done:mode==="done"};
+  if(editId!==null){items=items.map(function(i){return String(i.id)===String(editId)?Object.assign({},i,rec):i})}
+  else{rec.id=Math.max(Date.now(),items.reduce(function(m,i){return Math.max(m,i.id||0)},0)+1,lastDel?(lastDel.id||0)+1:0);items.push(rec)}
+  save();render();clearForm();
+};
+$("cancel").onclick=clearForm;
+["name","cost","labor"].forEach(function(id){$(id).onkeydown=function(e){if(e.key==="Enter")$("add").onclick()}});
+function onList(e){
+  var b=e.target.closest?e.target.closest("button"):e.target;
+  if(!b||!b.getAttribute)return;
+  var id=b.getAttribute("data-id"),act=b.getAttribute("data-act");
+  var it=items.filter(function(i){return String(i.id)===id})[0];
+  if(!id||!it)return;
+  if(act==="del"){
+    lastDel=it;items=items.filter(function(i){return i!==it});
+    if(String(editId)===id)clearForm();
+    save();render();toast("Deleted "+it.name,true);
+  }else if(act==="tog"){
+    it.done=!it.done;save();render();toast(it.done?"Moved to Done":"Moved to To do",false);
+  }else if(act==="edit"){
+    editId=it.id;$("name").value=it.name;$("cost").value=it.cost||"";$("labor").value=it.labor||"";setMode(it.done?"done":"todo");
+    $("add").textContent="Save changes";$("cancel").style.display="block";
+    if($("name").scrollIntoView)$("name").scrollIntoView({block:"center"});$("name").focus();
+  }
+}
+$("todoList").onclick=onList;$("doneList").onclick=onList;
+$("undo").onclick=function(){if(lastDel){items.push(lastDel);lastDel=null;save();render();$("toast").style.display="none"}};
+function csvText(){
+  var q=function(v){return '"'+String(v).replace(/"/g,'""')+'"'};
+  return ["Item,Cost,Labor,Total,Status",[q("Car purchase price"),price.toFixed(2),"0.00",price.toFixed(2),"Bought"].join(",")].concat(items.map(function(i){return [q(i.name),i.cost.toFixed(2),i.labor.toFixed(2),tot(i).toFixed(2),i.done?"Done":"To do"].join(",")})).join("\n");
+}
+$("csv").onclick=async function(){
+  var txt=csvText(),name=((carName||"car").replace(/[^\w-]+/g,"-"))+"-expenses.csv";
+  try{var dl=await claude.use("downloads");if(dl){await dl.save({filename:name,data:txt});return}}catch(e){}
+  try{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv"}));a.download=name;document.body.appendChild(a);a.click();a.remove()}catch(e){toast("Download blocked here. Try Copy as text.",false)}
+};
+$("copy").onclick=async function(){
+  var f=function(d){return items.filter(function(i){return i.done===d}).map(function(i){return "- "+i.name+": "+money(tot(i))}).join("\n")||"- none"};
+  var d1=items.filter(function(i){return i.done}).reduce(function(a,i){return a+tot(i)},0),s=items.reduce(function(a,i){return a+tot(i)},0);
+  var t=(carName||"Car")+"\nCar price: "+money(price)+"\nDONE\n"+f(true)+"\nTO DO\n"+f(false)+"\nTotal put in so far (with car): "+money(price+d1)+"\nTotal after everything (with car): "+money(price+s);
+  try{await navigator.clipboard.writeText(t);toast("Copied",false)}catch(e){
+    try{var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();toast("Copied",false)}catch(e2){toast("Copy blocked here",false)}}
+};
+init();
+</script>
+</body>
+</html>
